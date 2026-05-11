@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+
+  // Dev-only proxy (ignored during `vite build`)
   server: {
     port: 5173,
     proxy: {
@@ -11,5 +13,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    chunkSizeWarningLimit: 500,
   },
 });

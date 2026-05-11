@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 
 // Connect to backend WebSocket server
-const socket = io('http://localhost:3001', {
+const socket = io(window.location.origin, {
   autoConnect: true,
   reconnection: true,
   reconnectionAttempts: Infinity,
