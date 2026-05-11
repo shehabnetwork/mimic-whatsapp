@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`[backend] running on http://localhost:${PORT}`);
   console.log(`[backend] mock Meta Graph API ready — point Odoo's WhatsApp API URL to http://localhost:${PORT}`);
 });
