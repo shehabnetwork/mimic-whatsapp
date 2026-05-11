@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const cors = require('cors');
 
@@ -23,6 +24,10 @@ app.set('io', io);
 app.use(cors());
 app.use(express.json());
 
+// Serve React frontend static files
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+
 // Routes
 app.use('/api/send', sendRoute);
 app.use('/api/verify-webhook', verifyRoute);
@@ -34,6 +39,11 @@ app.use('/', metaApiRoute);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Fallback: serve React app for all non-API routes
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
 
 io.on('connection', (socket) => {
   console.log('[socket] client connected:', socket.id);
