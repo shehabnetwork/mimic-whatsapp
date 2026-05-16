@@ -131,7 +131,7 @@ export default function App() {
   const handleClearChat = () => setMessages([]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-200 font-sans">
+    <div className="flex overflow-hidden bg-gray-200 font-sans" style={{ height: '100dvh' }}>
       {/* Sidebar overlay on mobile */}
       {sidebarOpen && (
         <div
@@ -143,10 +143,11 @@ export default function App() {
       {/* Settings Sidebar */}
       <div
         className={`
-          fixed md:relative z-40 h-full w-72 shadow-xl transition-transform duration-300
+          fixed md:relative z-40 w-72 shadow-xl transition-transform duration-300
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           md:block
         `}
+        style={{ height: '100dvh' }}
       >
         <SettingsPanel onSave={(s) => { setSettings(s); setSidebarOpen(false); }} />
       </div>
