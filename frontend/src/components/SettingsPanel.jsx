@@ -46,17 +46,7 @@ export default function SettingsPanel({ onSave }) {
 
   const handleChange = (key) => (e) => {
     const value = e.target.value;
-    setSettings((prev) => {
-      const next = { ...prev, [key]: value };
-      // Keep appSecret, accessToken, and verifyToken in sync — they're the same credential
-      if (key === 'appSecret') { next.accessToken = value; next.verifyToken = value; }
-      if (key === 'accessToken') { next.appSecret = value; next.verifyToken = value; }
-      if (key === 'verifyToken') { next.appSecret = value; next.accessToken = value; }
-      // Keep appId and wabaId in sync — same value in the mock
-      if (key === 'appId') next.wabaId = value;
-      if (key === 'wabaId') next.appId = value;
-      return next;
-    });
+    setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   };
 
@@ -107,7 +97,6 @@ export default function SettingsPanel({ onSave }) {
               value={settings.appId}
               onChange={handleChange('appId')}
               placeholder="102290129340398"
-              hint="Same value as WhatsApp Business Account ID"
             />
             <Field
               label="App Secret"
@@ -115,7 +104,6 @@ export default function SettingsPanel({ onSave }) {
               value={settings.appSecret}
               onChange={handleChange('appSecret')}
               placeholder="my_verify_token"
-              hint="Also used as the webhook Verify Token"
             />
             <Field
               label="Phone Number ID"
@@ -130,7 +118,6 @@ export default function SettingsPanel({ onSave }) {
               value={settings.wabaId}
               onChange={handleChange('wabaId')}
               placeholder="102290129340398"
-              hint="Same value as App ID"
             />
             <Field
               label="Access Token"
@@ -138,7 +125,6 @@ export default function SettingsPanel({ onSave }) {
               value={settings.accessToken}
               onChange={handleChange('accessToken')}
               placeholder="my_verify_token"
-              hint="Same value as App Secret"
             />
           </div>
         </section>
@@ -161,7 +147,7 @@ export default function SettingsPanel({ onSave }) {
               value={settings.verifyToken}
               onChange={handleChange('verifyToken')}
               placeholder="my_verify_token"
-              hint="Must match App Secret — used for hub.challenge handshake"
+              hint="Used for the hub.challenge handshake"
             />
           </div>
         </section>
