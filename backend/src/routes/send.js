@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
+const { saveMedia } = require('../mediaStore');
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ const router = express.Router();
  *   wabaId: string,            // e.g. "102290129340398"
  *   from: string,              // simulated user phone e.g. "16505551234"
  *   contactName: string,       // e.g. "Test User"
- *   type: "text" | "location",
+ *   type: "text" | "location" | "image" | "audio",
  *   text: string,              // for type=text
  *   location: {                // for type=location
  *     latitude: number,
@@ -23,6 +24,7 @@ const router = express.Router();
  *     name: string,
  *     address: string,
  *   }
+ *   media: { data: string, mimeType: string, fileName: string }
  * }
  */
 router.post('/', async (req, res) => {
@@ -35,6 +37,7 @@ router.post('/', async (req, res) => {
     type,
     text,
     location,
+    media,
     appSecret,
   } = req.body;
 
@@ -68,6 +71,34 @@ router.post('/', async (req, res) => {
         longitude: location.longitude,
         name: location.name || '',
         address: location.address || '',
+      },
+    };
+  } else if (type === 'image' || type === 'audio') {
+    if (!media?.data) return res.status(400).json({ error: `media.data field required for type=${type}` });
+    const validMimeType = type === 'image'
+      ? ['image/jpeg', 'image/png'].includes(media.mimeType)
+      : typeof media.mimeType === 'string' && media.mimeType.startsWith('audio/');
+    if (!validMimeType) return res.status(400).json({ error: `Unsupported ${type} MIME type` });
+
+    const maxBytes = type === 'image' ? 5 * 1024 * 1024 : 16 * 1024 * 1024;
+    let storedMedia;
+    try {
+      storedMedia = saveMedia(media, maxBytes);
+    } catch (err) {
+      const status = err.message.includes('size limit') ? 413 : 400;
+      return res.status(status).json({ error: err.message });
+    }
+
+    messageObj = {
+      from,
+      id: messageId,
+      timestamp,
+      type,
+      [type]: {
+        id: storedMedia.id,
+        mime_type: storedMedia.mimeType,
+        sha256: storedMedia.sha256,
+        ...(type === 'audio' ? { voice: true } : {}),
       },
     };
   } else {

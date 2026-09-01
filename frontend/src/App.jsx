@@ -3,27 +3,7 @@ import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
 import SettingsPanel from './components/SettingsPanel';
 import socket from './socket';
-
-const DEFAULT_SETTINGS = {
-  webhookUrl: 'http://localhost:8069/whatsapp/webhook',
-  phoneNumberId: '106540352242922',
-  wabaId: '102290129340398',
-  appId: '102290129340398',
-  appSecret: 'my_verify_token',
-  accessToken: 'my_verify_token',
-  from: '16505551234',
-  contactName: 'Test User',
-  verifyToken: 'my_verify_token',
-};
-
-function loadSettings() {
-  try {
-    const saved = localStorage.getItem('wa_sim_settings');
-    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_SETTINGS };
-  } catch {
-    return { ...DEFAULT_SETTINGS };
-  }
-}
+import { getSessionId, loadSettings } from './session';
 
 let msgCounter = 0;
 function nextId() {
@@ -31,6 +11,7 @@ function nextId() {
 }
 
 export default function App() {
+  const [sessionId] = useState(getSessionId);
   const [settings, setSettings] = useState(loadSettings);
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -39,16 +20,19 @@ export default function App() {
 
   // Socket connection status
   useEffect(() => {
-    const onConnect = () => setSocketConnected(true);
+    const onConnect = () => {
+      setSocketConnected(true);
+      socket.emit('session:join', sessionId);
+    };
     const onDisconnect = () => setSocketConnected(false);
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
-    if (socket.connected) setSocketConnected(true);
+    if (socket.connected) onConnect();
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
     };
-  }, []);
+  }, [sessionId]);
 
   // Listen for agent replies
   useEffect(() => {
@@ -83,6 +67,9 @@ export default function App() {
       type: msgData.type,
       text: msgData.text,
       location: msgData.location,
+      url: msgData.previewUrl || msgData.media?.data,
+      fileName: msgData.media?.fileName,
+      duration: msgData.duration,
       timestamp: Date.now(),
       status: 'sending',
     };
@@ -103,6 +90,7 @@ export default function App() {
           type: msgData.type,
           text: msgData.text,
           location: msgData.location,
+          media: msgData.media,
         }),
       });
 
@@ -149,7 +137,10 @@ export default function App() {
         `}
         style={{ height: '100dvh' }}
       >
-        <SettingsPanel onSave={(s) => { setSettings(s); setSidebarOpen(false); }} />
+        <SettingsPanel
+          sessionId={sessionId}
+          onSave={(s) => { setSettings(s); setSidebarOpen(false); }}
+        />
       </div>
 
       {/* Main Chat Area */}

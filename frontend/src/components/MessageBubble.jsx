@@ -84,6 +84,33 @@ function LocationBubble({ location }) {
   );
 }
 
+function ImageBubble({ message }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {message.url ? (
+        <a href={message.url} target="_blank" rel="noopener noreferrer">
+          <img
+            src={message.url}
+            alt={message.fileName || 'Shared image'}
+            className="block max-w-full w-64 max-h-72 object-contain rounded bg-gray-100"
+          />
+        </a>
+      ) : (
+        <span className="text-xs text-gray-400">[Image]</span>
+      )}
+      {message.fileName && <span className="text-xs text-gray-500 truncate">{message.fileName}</span>}
+    </div>
+  );
+}
+
+function AudioBubble({ message }) {
+  return message.url ? (
+    <audio controls preload="metadata" src={message.url} className="w-64 max-w-full" />
+  ) : (
+    <span className="text-xs text-gray-400">[Voice message]</span>
+  );
+}
+
 export default function MessageBubble({ message }) {
   const isSent = message.direction === 'sent';
 
@@ -118,14 +145,10 @@ export default function MessageBubble({ message }) {
           </div>
         )}
         {message.type === 'image' && (
-          <div>
-            <span className="text-xs text-gray-400">[Image]</span>
-            {message.url && (
-              <a href={message.url} target="_blank" rel="noopener noreferrer" className="block text-xs text-blue-500 underline mt-1 truncate">
-                {message.url}
-              </a>
-            )}
-          </div>
+          <ImageBubble message={message} />
+        )}
+        {message.type === 'audio' && (
+          <AudioBubble message={message} />
         )}
         {message.type === 'document' && (
           <div>
@@ -138,7 +161,7 @@ export default function MessageBubble({ message }) {
           </div>
         )}
         {/* Unknown fallback */}
-        {!['text','location','template','interactive','image','document'].includes(message.type) && (
+        {!['text','location','template','interactive','image','audio','document'].includes(message.type) && (
           <details className="text-xs text-gray-500">
             <summary className="cursor-pointer">Raw payload</summary>
             <pre className="mt-1 bg-gray-100 p-1 rounded text-xs overflow-auto max-w-xs">

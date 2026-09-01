@@ -22,7 +22,8 @@ const io = new Server(server, {
 app.set('io', io);
 
 app.use(cors());
-app.use(express.json());
+// Voice notes can be up to 16 MB; base64 encoding adds roughly 33% overhead.
+app.use(express.json({ limit: '25mb' }));
 
 // Serve React frontend static files
 const frontendDist = path.join(__dirname, '../../frontend/dist');
@@ -47,6 +48,14 @@ app.get('*', (_req, res) => {
 
 io.on('connection', (socket) => {
   console.log('[socket] client connected:', socket.id);
+  socket.on('session:join', (sessionId) => {
+    if (typeof sessionId !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(sessionId)) {
+      console.warn('[socket] rejected invalid session id from:', socket.id);
+      return;
+    }
+    socket.join(`session:${sessionId}`);
+    console.log(`[socket] ${socket.id} joined session:${sessionId}`);
+  });
   socket.on('disconnect', () => {
     console.log('[socket] client disconnected:', socket.id);
   });

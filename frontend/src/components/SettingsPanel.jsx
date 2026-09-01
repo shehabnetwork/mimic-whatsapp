@@ -1,25 +1,5 @@
 import React, { useState } from 'react';
-
-const DEFAULTS = {
-  webhookUrl: 'http://localhost:8069/whatsapp/webhook',
-  appId: '102290129340398',
-  appSecret: 'my_verify_token',
-  phoneNumberId: '106540352242922',
-  wabaId: '102290129340398',
-  accessToken: 'my_verify_token',
-  verifyToken: 'my_verify_token',
-  from: '16505551234',
-  contactName: 'Test User',
-};
-
-function loadSettings() {
-  try {
-    const saved = localStorage.getItem('wa_sim_settings');
-    return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : { ...DEFAULTS };
-  } catch {
-    return { ...DEFAULTS };
-  }
-}
+import { getGraphApiBaseUrl, loadSettings, saveSettings } from '../session';
 
 function Field({ label, id, value, onChange, placeholder, type = 'text', hint }) {
   return (
@@ -38,7 +18,7 @@ function Field({ label, id, value, onChange, placeholder, type = 'text', hint })
   );
 }
 
-export default function SettingsPanel({ onSave }) {
+export default function SettingsPanel({ sessionId, onSave }) {
   const [settings, setSettings] = useState(loadSettings);
   const [saved, setSaved] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
@@ -51,7 +31,7 @@ export default function SettingsPanel({ onSave }) {
   };
 
   const handleSave = () => {
-    localStorage.setItem('wa_sim_settings', JSON.stringify(settings));
+    saveSettings(settings);
     onSave(settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -87,9 +67,9 @@ export default function SettingsPanel({ onSave }) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-        {/* Odoo WhatsApp Account fields — matches Odoo's form exactly */}
+        {/* WhatsApp provider account fields */}
         <section>
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Odoo WhatsApp Account (Sending Messages)</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">WhatsApp Provider Account</h3>
           <div className="flex flex-col gap-3">
             <Field
               label="App ID"
@@ -129,17 +109,17 @@ export default function SettingsPanel({ onSave }) {
           </div>
         </section>
 
-        {/* Webhook URL + verify token */}
+        {/* Target portal webhook URL + verify token */}
         <section>
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Odoo Webhook Settings</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target Portal Webhook</h3>
           <div className="flex flex-col gap-3">
             <Field
-              label="Odoo Webhook URL"
+              label="Webhook URL"
               id="webhookUrl"
               value={settings.webhookUrl}
               onChange={handleChange('webhookUrl')}
               placeholder="http://localhost:8069/whatsapp/webhook"
-              hint="Where this app forwards simulated inbound messages"
+              hint="Where this window forwards simulated inbound messages"
             />
             <Field
               label="Verify Token"
@@ -175,18 +155,17 @@ export default function SettingsPanel({ onSave }) {
           </div>
         </section>
 
-        {/* Mock Meta API notice */}
+        {/* Session-scoped mock Meta API notice */}
         <section className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-          <h3 className="text-xs font-bold text-amber-700 mb-1">⚙️ Odoo API URL Setup</h3>
+          <h3 className="text-xs font-bold text-amber-700 mb-1">⚙️ Portal API URL Setup</h3>
           <p className="text-xs text-amber-700 leading-relaxed">
-            In Odoo, go to <strong>Settings → WhatsApp → Provider</strong> and set the
-            Graph API base URL to:
+            Configure this portal's Graph API base URL as:
           </p>
           <code className="block mt-1 text-xs bg-amber-100 text-amber-900 px-2 py-1 rounded font-mono break-all">
-            http://localhost:3001
+            {getGraphApiBaseUrl(sessionId)}
           </code>
           <p className="text-xs text-amber-600 mt-1">
-            This routes Odoo's replies through this app instead of Meta's real API.
+            This URL is unique to this window, so replies do not appear in other sessions.
           </p>
         </section>
 
